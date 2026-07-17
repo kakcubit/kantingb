@@ -1,0 +1,6 @@
+{
+  "name": "Kantin Amanah Gapura Batu",
+  "description": "Aplikasi pencatatan arus kas kantin sekolah untuk memantau uang masuk penjualan dan uang keluar pembayaran hasil penjualan makanan titipan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
