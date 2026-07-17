@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import { api } from '../lib/api';
 import { Shield, ShoppingBag, Coins, Key, User, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -29,21 +30,14 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
+      const result = await api.login(username, password);
+      if (result.success && result.user) {
         onLoginSuccess(result.user);
       } else {
         setError(result.message || 'Username atau password salah!');
       }
     } catch (err) {
-      setError('Tidak dapat terhubung ke server database online. Pastikan dev server berjalan.');
+      setError('Tidak dapat terhubung ke server database. Pastikan koneksi internet aktif.');
     } finally {
       setLoading(false);
     }

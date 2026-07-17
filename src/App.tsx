@@ -10,6 +10,7 @@ import Dashboard from './components/Dashboard';
 import KasirPanel from './components/KasirPanel';
 import AdminPanel from './components/AdminPanel';
 import LoginScreen from './components/LoginScreen';
+import { api } from './lib/api';
 import { LayoutDashboard, ShoppingBag, Shield, HelpCircle, RefreshCcw, LogOut, Utensils, Coins, BookOpen, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -71,14 +72,11 @@ export default function App() {
   // Fetch online data from backend
   const fetchState = async () => {
     try {
-      const response = await fetch('/api/state');
-      if (response.ok) {
-        const data = await response.json();
-        setPenitip(data.penitip || []);
-        setTransaksi(data.transaksi || []);
-        setUsers(data.users || []);
-        setSettings(data.settings || { persenPotongan: 10 });
-      }
+      const data = await api.getState();
+      setPenitip(data.penitip || []);
+      setTransaksi(data.transaksi || []);
+      setUsers(data.users || []);
+      setSettings(data.settings || { persenPotongan: 10 });
     } catch (err) {
       console.error('Gagal mengambil data dari server database online:', err);
     }
@@ -117,16 +115,8 @@ export default function App() {
   // State Mutators: Transactions
   const handleAddTransaction = async (newTx: Omit<Transaksi, 'id'>) => {
     try {
-      const res = await fetch('/api/transaksi', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTx),
-      });
-      if (res.ok) {
-        await fetchState();
-      } else {
-        alert('Gagal membukukan transaksi kas.');
-      }
+      await api.addTransaction(newTx);
+      await fetchState();
     } catch (e) {
       console.error(e);
       alert('Terjadi kesalahan koneksi saat membukukan transaksi.');
@@ -135,66 +125,42 @@ export default function App() {
 
   const handleDeleteTransaction = async (id: string) => {
     try {
-      const res = await fetch(`/api/transaksi/${id}`, {
-        method: 'DELETE',
-      });
-      if (res.ok) {
-        await fetchState();
-      } else {
-        alert('Gagal menghapus catatan transaksi.');
-      }
+      await api.deleteTransaction(id);
+      await fetchState();
     } catch (e) {
       console.error(e);
+      alert('Gagal menghapus catatan transaksi.');
     }
   };
 
   // State Mutators: Penitip (Consignor)
   const handleAddPenitip = async (newP: Omit<Penitip, 'id'>) => {
     try {
-      const res = await fetch('/api/penitip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newP),
-      });
-      if (res.ok) {
-        await fetchState();
-      } else {
-        alert('Gagal mendaftarkan penitip.');
-      }
+      await api.savePenitip(newP);
+      await fetchState();
     } catch (e) {
       console.error(e);
+      alert('Gagal mendaftarkan penitip.');
     }
   };
 
   const handleEditPenitip = async (updatedP: Penitip) => {
     try {
-      const res = await fetch('/api/penitip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedP),
-      });
-      if (res.ok) {
-        await fetchState();
-      } else {
-        alert('Gagal mengedit data penitip.');
-      }
+      await api.savePenitip(updatedP);
+      await fetchState();
     } catch (e) {
       console.error(e);
+      alert('Gagal mengedit data penitip.');
     }
   };
 
   const handleDeletePenitip = async (id: string) => {
     try {
-      const res = await fetch(`/api/penitip/${id}`, {
-        method: 'DELETE',
-      });
-      if (res.ok) {
-        await fetchState();
-      } else {
-        alert('Gagal menghapus penitip.');
-      }
+      await api.deletePenitip(id);
+      await fetchState();
     } catch (e) {
       console.error(e);
+      alert('Gagal menghapus penitip.');
     }
   };
 
@@ -464,10 +430,8 @@ export default function App() {
                       message: 'Apakah Anda ingin mereset seluruh data kembali ke kondisi demo awal di database online? Seluruh perubahan saat ini akan hilang.',
                       onConfirm: async () => {
                         try {
-                          const res = await fetch('/api/reset', { method: 'POST' });
-                          if (res.ok) {
+                          await api.resetDemo();
                             window.location.reload();
-                          }
                         } catch (e) {
                           console.error('Gagal terhubung ke server database.');
                         }
