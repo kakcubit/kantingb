@@ -426,32 +426,7 @@ export default function App() {
               </div>
             </div>
 
-            {userRole === 'admin' && (
-              <div className="pt-2 px-3">
-                <button
-                  id="btn-reset-demo"
-                  type="button"
-                  onClick={() => {
-                    setConfirmDialog({
-                      isOpen: true,
-                      message: 'Apakah Anda ingin mereset seluruh data kembali ke kondisi demo awal di database online? Seluruh perubahan saat ini akan hilang.',
-                      onConfirm: async () => {
-                        try {
-                          await api.resetDemo();
-                            window.location.reload();
-                        } catch (e) {
-                          console.error('Gagal terhubung ke server database.');
-                        }
-                      }
-                    });
-                  }}
-                  className="text-[10px] text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1 mt-2 font-medium cursor-pointer"
-                >
-                  <RefreshCcw className="h-3 w-3" />
-                  Reset Data Demo
-                </button>
-              </div>
-            )}
+            
 
                 </div>
               </motion.div>

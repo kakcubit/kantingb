@@ -147,6 +147,9 @@ async function startServer() {
     }
   });
 
+  
+  });
+
   // API Route: Get State
   app.get('/api/state', (req, res) => {
     const db = readDB();

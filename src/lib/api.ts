@@ -190,14 +190,7 @@ export const api = {
     }
   },
 
-  async resetDemo() {
-    if (!useSupabase) {
-      const res = await fetch('/api/reset', { method: 'POST' });
-      if (!res.ok) throw new Error('Failed to reset');
-    } else {
-      throw new Error('Reset demo is not supported on Supabase directly via client');
-    }
-  },
+  
 
   async importBackup(parsed: any) {
     if (!useSupabase) {
