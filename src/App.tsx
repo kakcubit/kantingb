@@ -94,6 +94,12 @@ export default function App() {
   // Trigger state fetch when logged in
   useEffect(() => {
     fetchState();
+    const interval = setInterval(() => {
+      if (currentUser) {
+        fetchState();
+      }
+    }, 5000);
+    return () => clearInterval(interval);
   }, [currentUser]);
 
   // Handle Login success

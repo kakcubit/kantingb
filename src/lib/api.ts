@@ -25,7 +25,7 @@ export const api = {
         } : { persenPotongan: 10 }
       };
     } else {
-      const res = await fetch('/api/state');
+      const res = await fetch('/api/state', { cache: 'no-store' });
       if (!res.ok) throw new Error('Failed to fetch state');
       return res.json();
     }
