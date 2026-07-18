@@ -20,6 +20,15 @@ export default function App() {
   const [transaksi, setTransaksi] = useState<Transaksi[]>([]);
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [settings, setSettings] = useState<AppSettings>({ persenPotongan: 10 });
+
+  useEffect(() => {
+    if (settings?.temaWarna) {
+      document.body.className = 'theme-' + settings.temaWarna;
+    } else {
+      document.body.className = '';
+    }
+  }, [settings?.temaWarna]);
+
   const [confirmDialog, setConfirmDialog] = useState<{isOpen: boolean, message: string, onConfirm: () => void}>({isOpen: false, message: '', onConfirm: () => {}});
 
   // Authentication State
@@ -84,9 +93,7 @@ export default function App() {
 
   // Trigger state fetch when logged in
   useEffect(() => {
-    if (currentUser) {
-      fetchState();
-    }
+    fetchState();
   }, [currentUser]);
 
   // Handle Login success
@@ -296,7 +303,7 @@ export default function App() {
 
   // If user is not authenticated, show Login Screen
   if (!currentUser) {
-    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+    return <LoginScreen onLoginSuccess={handleLoginSuccess} settings={settings} />;
   }
 
   const userRole = currentUser.role;
@@ -305,7 +312,7 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800">
       
       {/* Top Header Panel */}
-      <Header
+      <Header settings={settings}
         currentRole={userRole}
         onChangeRole={() => {}} // Disabled switching roles in the header (must log in to switch)
         totalKas={liveStats.totalKas}
@@ -346,7 +353,7 @@ export default function App() {
                   }`}
                 >
                   <ShoppingBag className="h-4 w-4" />
-                  Rekap Jualan Titipan
+                  Input Penjualan & Belanja
                 </button>
                 <button
                   id="nav-btn-kasir-payout"
@@ -464,7 +471,7 @@ export default function App() {
                   exit={{ opacity: 0, x: -10 }}
                   transition={{ duration: 0.15 }}
                 >
-                  <Dashboard
+                  <Dashboard settings={settings}
                     penitip={penitip}
                     transaksi={transaksi}
                     onNavigateToTab={(subtab) => {
@@ -564,7 +571,7 @@ export default function App() {
       {/* Footer copyright */}
       <footer className="bg-white border-t border-slate-100 py-4 mt-12">
         <div className="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400">
-          <p>© {new Date().getFullYear()} Kantin Amanah Gapura Batu. Dirancang khusus untuk pengelolaan keuangan kantin sekolah aman, transparan & akuntabel.</p>
+          <p>© {new Date().getFullYear()} Kantin Amanah SDN Gapura Barat I. Dirancang khusus untuk pengelolaan keuangan kantin sekolah aman, transparan & akuntabel.</p>
         </div>
       </footer>
 

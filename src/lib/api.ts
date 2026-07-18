@@ -16,7 +16,13 @@ export const api = {
         penitip: penitip?.map(p => ({ ...p, id: p.id, nama: p.nama, kontak: p.kontak, rekening: p.rekening, keterangan: p.keterangan })) || [],
         transaksi: transaksi?.map(t => ({ ...t, marginKantin: t.margin_kantin, penitipId: t.penitip_id })) || [],
         users: users?.map(u => ({ ...u, namaLengkap: u.nama_lengkap })) || [],
-        settings: settings ? { persenPotongan: settings.persen_potongan } : { persenPotongan: 10 }
+        settings: settings ? { 
+          persenPotongan: settings.persen_potongan,
+          namaKantin: settings.nama_kantin,
+          namaSekolah: settings.nama_sekolah,
+          logoUrl: settings.logo_url,
+          temaWarna: settings.tema_warna
+        } : { persenPotongan: 10 }
       };
     } else {
       const res = await fetch('/api/state');
@@ -156,10 +162,22 @@ export const api = {
     if (useSupabase) {
       const { data } = await supabase!.from('settings').select('id').limit(1).single();
       if (data) {
-        const { error } = await supabase!.from('settings').update({ persen_potongan: s.persenPotongan }).eq('id', data.id);
+        const { error } = await supabase!.from('settings').update({ 
+          persen_potongan: s.persenPotongan,
+          nama_kantin: s.namaKantin,
+          nama_sekolah: s.namaSekolah,
+          logo_url: s.logoUrl,
+          tema_warna: s.temaWarna
+        }).eq('id', data.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase!.from('settings').insert({ persen_potongan: s.persenPotongan });
+        const { error } = await supabase!.from('settings').insert({ 
+          persen_potongan: s.persenPotongan,
+          nama_kantin: s.namaKantin,
+          nama_sekolah: s.namaSekolah,
+          logo_url: s.logoUrl,
+          tema_warna: s.temaWarna
+        });
         if (error) throw error;
       }
     } else {

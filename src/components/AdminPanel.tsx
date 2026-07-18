@@ -3,6 +3,11 @@ import { Penitip, Transaksi, AppSettings, UserAccount } from '../types';
 import {
   Users, Download, Upload, Plus, Trash2, Edit2, ArrowUpRight, ArrowDownLeft, Settings, AlertCircle, Check
 } from 'lucide-react';
+
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import { FileText, FileSpreadsheet } from 'lucide-react';
 import { formatRupiah } from '../utils/helpers';
 
 interface AdminPanelProps {
@@ -28,6 +33,46 @@ export default function AdminPanel({
   onAddPenitip, onEditPenitip, onDeletePenitip, onAddTransaction, onDeleteTransaction,
   onImportBackup, onSaveUser, onDeleteUser, onSaveSettings
 }: AdminPanelProps) {
+  
+  const [filterType, setFilterType] = useState<string>('semua');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+
+  const filteredTransaksi = useMemo(() => {
+    if (filterType === 'semua') return transaksi;
+    
+    return transaksi.filter(t => {
+      const [year, month, day] = t.tanggal.split(' ')[0].split('-');
+      const txDate = new Date(Number(year), Number(month) - 1, Number(day));
+      const now = new Date();
+      now.setHours(0,0,0,0);
+      
+      if (filterType === 'harian') {
+        return txDate.getTime() === now.getTime();
+      }
+      if (filterType === 'mingguan') {
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        return txDate >= startOfWeek;
+      }
+      if (filterType === 'bulanan') {
+        return txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
+      }
+      if (filterType === 'tahunan') {
+        return txDate.getFullYear() === now.getFullYear();
+      }
+      if (filterType === 'rentang') {
+        if (!startDate || !endDate) return true;
+        const [sYear, sMonth, sDay] = startDate.split('-');
+        const [eYear, eMonth, eDay] = endDate.split('-');
+        const start = new Date(Number(sYear), Number(sMonth) - 1, Number(sDay));
+        const end = new Date(Number(eYear), Number(eMonth) - 1, Number(eDay));
+        return txDate >= start && txDate <= end;
+      }
+      return true;
+    });
+  }, [transaksi, filterType, startDate, endDate]);
+
   const [activeSubTab, setActiveSubTab] = useState(initialTab);
 
   // Modals / Confirmations
@@ -45,6 +90,10 @@ export default function AdminPanel({
   
   // Settings Form
   const [settingsPercent, setSettingsPercent] = useState<string>(settings.persenPotongan?.toString() || '10');
+  const [settingsNamaKantin, setSettingsNamaKantin] = useState<string>(settings.namaKantin || '');
+  const [settingsNamaSekolah, setSettingsNamaSekolah] = useState<string>(settings.namaSekolah || '');
+  const [settingsLogoUrl, setSettingsLogoUrl] = useState<string>(settings.logoUrl || '');
+  const [settingsTemaWarna, setSettingsTemaWarna] = useState<string>(settings.temaWarna || 'emerald');
 
   // Backup Form
   const [importJsonText, setImportJsonText] = useState('');
@@ -108,7 +157,7 @@ export default function AdminPanel({
         dibayar,
         outstanding: Math.max(0, omset - dibayar)
       };
-    }).filter(p => p.outstanding > 0);
+    }).sort((a, b) => b.outstanding - a.outstanding);
   }, [penitip, transaksi]);
 
   const handlePay = (e: React.FormEvent) => {
@@ -145,6 +194,51 @@ export default function AdminPanel({
     dlAnchorElem.click();
   };
 
+  
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+    doc.text('Laporan Transaksi Kantin Amanah', 14, 15);
+    doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 22);
+
+    const tableColumn = ["Tanggal", "Keterangan", "Penitip", "Tipe", "Kategori", "Jumlah"];
+    const tableRows: any[] = [];
+
+    filteredTransaksi.slice().reverse().forEach(t => {
+      const rowData = [
+        t.tanggal,
+        t.keterangan,
+        t.penitipId ? (penitip.find(p => p.id === t.penitipId)?.nama || '-') : '-',
+        t.tipe === 'masuk' ? 'Pemasukan' : 'Pengeluaran',
+        t.kategori.replace('_', ' ').toUpperCase(),
+        formatRupiah(t.jumlah)
+      ];
+      tableRows.push(rowData);
+    });
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 30,
+    });
+    doc.save('laporan_transaksi.pdf');
+  };
+
+  const handleDownloadExcel = () => {
+    const tableData = filteredTransaksi.slice().reverse().map(t => ({
+      Tanggal: t.tanggal,
+      Keterangan: t.keterangan,
+      Tipe: t.tipe === 'masuk' ? 'Pemasukan' : 'Pengeluaran',
+      Kategori: t.kategori.replace('_', ' ').toUpperCase(),
+      Jumlah: t.jumlah,
+      Penitip: t.penitipId ? penitip.find(p => p.id === t.penitipId)?.nama : '-'
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(tableData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Transaksi");
+    XLSX.writeFile(wb, "laporan_transaksi.xlsx");
+  };
+
   const handleBackupImport = () => {
     try {
       const parsed = JSON.parse(importJsonText);
@@ -178,6 +272,7 @@ export default function AdminPanel({
               <button onClick={() => setActiveSubTab('penitip')} className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${activeSubTab === 'penitip' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-emerald-50'}`}>Daftar Penitip</button>
               <button onClick={() => setActiveSubTab('users')} className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${activeSubTab === 'users' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-emerald-50'}`}>Manajemen Pengguna</button>
               <button onClick={() => setActiveSubTab('settings')} className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${activeSubTab === 'settings' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-emerald-50'}`}>Pengaturan</button>
+              <button onClick={() => setActiveSubTab('laporan')} className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${activeSubTab === 'laporan' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-emerald-50'}`}>Cetak Laporan</button>
               <button onClick={() => setActiveSubTab('backup')} className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${activeSubTab === 'backup' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-emerald-50'}`}>Backup Data</button>
             </>
           )}
@@ -188,10 +283,7 @@ export default function AdminPanel({
         {activeSubTab === 'payout' && (
           <div>
             <h3 className="text-lg font-bold text-slate-800 mb-4">Daftar Hutang ke Penitip</h3>
-            {penitipOwed.length === 0 ? (
-              <p className="text-sm text-slate-500">Semua lunas!</p>
-            ) : (
-              <div className="space-y-4">
+            <div className="space-y-4">
                 {penitipOwed.map(item => (
                   <div key={item.penitip.id} className="bg-white p-4 rounded-xl border border-slate-200 flex justify-between items-center">
                     <div>
@@ -203,32 +295,68 @@ export default function AdminPanel({
                         <p className="text-[10px] text-slate-400">Total Belum Dibayar</p>
                         <p className="font-bold text-rose-600">{formatRupiah(item.outstanding)}</p>
                       </div>
-                      <button
-                        onClick={() => setPayoutModal({ isOpen: true, penitipId: item.penitip.id, owed: item.outstanding, namaPenitip: item.penitip.nama })}
-                        className="bg-emerald-600 hover:bg-emerald-700 transition-colors text-white px-4 py-2 rounded-lg text-xs font-bold"
-                      >
-                        Bayar Lunas
-                      </button>
+                      {item.outstanding > 0 ? (
+                        <button
+                          onClick={() => setPayoutModal({ isOpen: true, penitipId: item.penitip.id, owed: item.outstanding, namaPenitip: item.penitip.nama })}
+                          className="bg-emerald-600 hover:bg-emerald-700 transition-colors text-white px-4 py-2 rounded-lg text-xs font-bold"
+                        >
+                          Bayar Lunas
+                        </button>
+                      ) : (
+                        <span className="px-4 py-2 text-xs font-bold text-slate-400">Lunas</span>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
-            )}
           </div>
         )}
         
         {activeSubTab === 'kas' && (
           <div>
              <h3 className="text-lg font-bold text-slate-800 mb-4">Riwayat Arus Kas</h3>
+            <div className="flex flex-col md:flex-row gap-4 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1">Filter Waktu</label>
+                <select value={filterType} onChange={e => setFilterType(e.target.value)} className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
+                  <option value="semua">Semua Waktu</option>
+                  <option value="harian">Hari Ini</option>
+                  <option value="mingguan">Minggu Ini</option>
+                  <option value="bulanan">Bulan Ini</option>
+                  <option value="tahunan">Tahun Ini</option>
+                  <option value="rentang">Rentang Tanggal</option>
+                </select>
+              </div>
+              {filterType === 'rentang' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Mulai</label>
+                    <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Sampai</label>
+                    <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white" />
+                  </div>
+                </>
+              )}
+            </div>
+
              <div className="space-y-3">
-               {transaksi.slice().reverse().map(t => (
+               {filteredTransaksi.slice().reverse().map(t => (
                  <div key={t.id} className="bg-white p-4 rounded-xl border border-slate-200 flex justify-between items-center">
                    <div className="flex items-center gap-4">
                      <div className={`p-3 rounded-full ${t.tipe === 'masuk' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
                        {t.tipe === 'masuk' ? <ArrowDownLeft className="h-5 w-5"/> : <ArrowUpRight className="h-5 w-5"/>}
                      </div>
                      <div>
-                       <p className="font-bold text-slate-800">{t.keterangan}</p>
+                       <p className="font-bold text-slate-800">
+    {t.keterangan}
+    {(t.kategori === 'pembayaran_penitip' || t.kategori === 'penjualan_konsinyasi') && t.penitipId && (
+      <span className="ml-2 text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full uppercase tracking-wider">
+        {penitip.find(p => p.id === t.penitipId)?.nama || 'Penitip'}
+      </span>
+    )}
+  </p>
                        <p className="text-xs text-slate-500">{t.tanggal}</p>
                      </div>
                    </div>
@@ -345,13 +473,93 @@ export default function AdminPanel({
 
         {activeSubTab === 'settings' && userRole === 'admin' && (
           <div className="bg-white p-6 rounded-2xl border border-slate-200 max-w-md">
-            <h3 className="font-bold text-lg mb-4">Pengaturan Kantin</h3>
+            <h3 className="font-bold text-lg mb-4 text-slate-800 flex items-center gap-2"><Settings className="h-5 w-5"/> Pengaturan Aplikasi</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1">Persentase Potongan Titipan (%)</label>
-                <input type="number" value={settingsPercent} onChange={e => setSettingsPercent(e.target.value)} className="w-full border border-slate-200 rounded-xl px-4 py-2" />
+                <label className="block text-xs font-bold text-slate-500 mb-1">Nama Kantin</label>
+                <input type="text" value={settingsNamaKantin} onChange={e => setSettingsNamaKantin(e.target.value)} placeholder="Contoh: Kantin Amanah" className="w-full border border-slate-200 rounded-xl px-4 py-2 bg-slate-50 focus:bg-white transition-colors" />
               </div>
-              <button onClick={() => {onSaveSettings({persenPotongan: Number(settingsPercent)}); alert('Tersimpan!');}} className="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold w-full">Simpan Pengaturan</button>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1">Nama Sekolah</label>
+                <input type="text" value={settingsNamaSekolah} onChange={e => setSettingsNamaSekolah(e.target.value)} placeholder="Contoh: SDN Gapura Barat I" className="w-full border border-slate-200 rounded-xl px-4 py-2 bg-slate-50 focus:bg-white transition-colors" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1">URL Logo Kantin (Opsional)</label>
+                <input type="text" value={settingsLogoUrl} onChange={e => setSettingsLogoUrl(e.target.value)} placeholder="https://..." className="w-full border border-slate-200 rounded-xl px-4 py-2 bg-slate-50 focus:bg-white transition-colors" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1">Tema Warna Utama</label>
+                <select value={settingsTemaWarna} onChange={e => setSettingsTemaWarna(e.target.value)} className="w-full border border-slate-200 rounded-xl px-4 py-2 bg-slate-50 focus:bg-white transition-colors">
+                  <option value="emerald">Hijau Emerald (Default)</option>
+                  <option value="indigo">Ungu Indigo</option>
+                  <option value="blue">Biru Ocean</option>
+                  <option value="rose">Merah Rose</option>
+                  <option value="amber">Kuning Amber</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1">Persentase Potongan Titipan (%)</label>
+                <input type="number" value={settingsPercent} onChange={e => setSettingsPercent(e.target.value)} className="w-full border border-slate-200 rounded-xl px-4 py-2 bg-slate-50 focus:bg-white transition-colors" />
+              </div>
+              <button onClick={() => {
+                onSaveSettings({
+                  persenPotongan: Number(settingsPercent),
+                  namaKantin: settingsNamaKantin,
+                  namaSekolah: settingsNamaSekolah,
+                  logoUrl: settingsLogoUrl,
+                  temaWarna: settingsTemaWarna
+                }); 
+                alert('Pengaturan berhasil disimpan!');
+              }} className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-3 rounded-xl font-bold w-full transition-colors mt-2">
+                Simpan Pengaturan
+              </button>
+            </div>
+          </div>
+        )}
+
+        
+        {activeSubTab === 'laporan' && userRole === 'admin' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <div className="md:col-span-2 flex flex-col md:flex-row gap-4 mb-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1">Filter Data</label>
+                <select value={filterType} onChange={e => setFilterType(e.target.value)} className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
+                  <option value="semua">Semua Waktu</option>
+                  <option value="harian">Hari Ini</option>
+                  <option value="mingguan">Minggu Ini</option>
+                  <option value="bulanan">Bulan Ini</option>
+                  <option value="tahunan">Tahun Ini</option>
+                  <option value="rentang">Rentang Tanggal</option>
+                </select>
+              </div>
+              {filterType === 'rentang' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Mulai</label>
+                    <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Sampai</label>
+                    <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white" />
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border border-slate-200">
+              <h3 className="font-bold text-lg mb-4 text-rose-600 flex items-center gap-2"><FileText className="h-5 w-5"/> Download Laporan PDF</h3>
+              <p className="text-sm text-slate-500 mb-4">Unduh laporan transaksi arus kas dalam format PDF yang rapi dan siap cetak.</p>
+              <button onClick={handleDownloadPDF} className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-3 rounded-xl font-bold w-full flex justify-center items-center gap-2">
+                Download PDF
+              </button>
+            </div>
+            <div className="bg-white p-6 rounded-2xl border border-slate-200">
+              <h3 className="font-bold text-lg mb-4 text-emerald-600 flex items-center gap-2"><FileSpreadsheet className="h-5 w-5"/> Download Laporan Excel</h3>
+              <p className="text-sm text-slate-500 mb-4">Unduh data transaksi ke format Excel (XLSX) untuk analisa lebih lanjut.</p>
+              <button onClick={handleDownloadExcel} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-xl font-bold w-full flex justify-center items-center gap-2">
+                Download Excel
+              </button>
             </div>
           </div>
         )}

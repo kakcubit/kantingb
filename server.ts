@@ -17,6 +17,10 @@ interface User {
 
 interface Settings {
   persenPotongan: number;
+  namaKantin?: string;
+  namaSekolah?: string;
+  logoUrl?: string;
+  temaWarna?: string;
 }
 
 // Initial default data
@@ -97,6 +101,9 @@ const INITIAL_DB = {
   ] as User[],
   settings: {
     persenPotongan: 10,
+    namaKantin: 'Kantin Amanah',
+    namaSekolah: 'SDN Gapura Barat I',
+    temaWarna: 'emerald'
   } as Settings,
 };
 
@@ -230,9 +237,12 @@ async function startServer() {
   // API Route: Update global setting / percentage cut
   app.post('/api/settings', (req, res) => {
     const db = readDB();
-    const { persenPotongan } = req.body;
-
+    const { persenPotongan, namaKantin, namaSekolah, logoUrl, temaWarna } = req.body;
     db.settings.persenPotongan = Number(persenPotongan) || 10;
+    if (namaKantin !== undefined) db.settings.namaKantin = namaKantin;
+    if (namaSekolah !== undefined) db.settings.namaSekolah = namaSekolah;
+    if (logoUrl !== undefined) db.settings.logoUrl = logoUrl;
+    if (temaWarna !== undefined) db.settings.temaWarna = temaWarna;
     writeDB(db);
     res.json({ success: true, settings: db.settings });
   });

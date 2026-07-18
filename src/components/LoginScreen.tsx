@@ -5,14 +5,16 @@
 
 import React, { useState } from 'react';
 import { api } from '../lib/api';
+import { AppSettings } from '../types';
 import { Shield, ShoppingBag, Coins, Key, User, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface LoginScreenProps {
+  settings?: AppSettings;
   onLoginSuccess: (user: { id: string; username: string; role: 'admin' | 'kasir'; namaLengkap: string }) => void;
 }
 
-export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
+export default function LoginScreen({ onLoginSuccess, settings }: LoginScreenProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -58,13 +60,12 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         {/* Header Logo */}
         <div className="text-center space-y-2">
           <div className="mx-auto h-12 w-12 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-200">
-            <Coins className="h-6 w-6 animate-soft-pulse" />
+            {settings?.logoUrl ? <img src={settings.logoUrl} alt="Logo" className="h-12 w-12 rounded-2xl object-cover" /> : <Coins className="h-6 w-6 animate-soft-pulse" />}
           </div>
           <div>
             <h2 className="text-2xl font-bold font-display text-slate-800 tracking-tight">
-              Kantin Amanah
-            </h2>
-            <p className="text-xs text-slate-400 mt-0.5">Sistem Keuangan & Konsinyasi Gapura Batu</p>
+              {settings?.namaKantin || 'Kantin Amanah'}</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Sistem Keuangan & Konsinyasi {settings?.namaSekolah || 'SDN Gapura Barat I'}</p>
           </div>
         </div>
 

@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
-import { Penitip, Transaksi } from '../types';
+import { Penitip, Transaksi, AppSettings } from '../types';
 import { Wallet, TrendingUp, TrendingDown, Clock, Sparkles } from 'lucide-react';
 import { formatRupiah } from '../utils/helpers';
 import { motion } from 'motion/react';
 
 interface DashboardProps {
+  settings?: AppSettings;
   penitip: Penitip[];
   transaksi: Transaksi[];
   onNavigateToTab: (tabId: string) => void;
@@ -12,6 +13,7 @@ interface DashboardProps {
 }
 
 export default function Dashboard({
+  settings,
   penitip,
   transaksi,
   onNavigateToTab,

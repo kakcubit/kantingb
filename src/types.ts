@@ -32,6 +32,10 @@ export interface Transaksi {
 
 export interface AppSettings {
   persenPotongan: number;
+  namaKantin?: string;
+  namaSekolah?: string;
+  logoUrl?: string;
+  temaWarna?: string;
 }
 
 export interface UserAccount {

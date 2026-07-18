@@ -4,11 +4,12 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { UserRole } from '../types';
-import { Shield, ShoppingBag, Clock, Coins, Wallet, Landmark, Menu, LogOut } from 'lucide-react';
+import { UserRole, AppSettings } from '../types';
+import { Shield, ShoppingBag, Coins, Wallet, Landmark, Menu, LogOut } from 'lucide-react';
 import { formatRupiah } from '../utils/helpers';
 
 interface HeaderProps {
+  settings?: AppSettings;
   currentRole: UserRole;
   onChangeRole: (role: UserRole) => void;
   totalKas: number;
@@ -19,6 +20,7 @@ interface HeaderProps {
 }
 
 export default function Header({
+  settings,
   currentRole,
   onChangeRole,
   totalKas,
@@ -27,29 +29,7 @@ export default function Header({
   onToggleSidebar,
   onLogout,
 }: HeaderProps) {
-  const [currentTime, setCurrentTime] = useState<string>('');
-
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      const formatTime = now.toLocaleTimeString('id-ID', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      });
-      const formatDate = now.toLocaleDateString('id-ID', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      });
-      setCurrentTime(`${formatDate} | ${formatTime} WIB`);
-    };
-
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  
 
   return (
     <header
@@ -71,16 +51,16 @@ export default function Header({
               </button>
             )}
             <div className="h-10 w-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-sm shadow-emerald-200">
-              <Coins className="h-5 w-5" />
+              {settings?.logoUrl ? <img src={settings.logoUrl} alt="Logo" className="h-10 w-10 rounded-xl object-cover" /> : <Coins className="h-5 w-5" />}
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold font-display text-slate-800 tracking-tight">
-                  Kantin Amanah
+                  {settings?.namaKantin || 'Kantin Amanah'}
                 </h1>
                 <span className="bg-emerald-50 text-emerald-700 text-[11px] font-semibold px-2 py-0.5 rounded-full border border-emerald-100 flex items-center gap-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Gapura Batu
+                  {settings?.namaSekolah || 'SDN Gapura Barat I'}
                 </span>
               </div>
               <p className="text-xs text-slate-400">Pencatatan Arus Kas & Konsinyasi Titipan</p>
@@ -88,7 +68,7 @@ export default function Header({
           </div>
 
           {/* Quick Header Stats for immediate visual context */}
-          <div className="hidden lg:flex items-center gap-6 text-xs">
+          <div className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-6 text-xs w-full md:w-auto mt-2 md:mt-0 pt-2 border-t border-slate-100 md:border-t-0 md:pt-0">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-100">
               <Wallet className="h-4 w-4 text-emerald-600" />
               <div>
@@ -115,11 +95,7 @@ export default function Header({
           {/* Right Controls: Date/Time and Role Switcher */}
           <div className="flex flex-wrap items-center gap-4 sm:justify-between md:justify-end">
             
-            {/* Live Clock */}
-            <div className="flex items-center gap-2 text-slate-500 text-xs py-1 px-2.5 bg-slate-50 rounded-lg border border-slate-100">
-              <Clock className="h-3.5 w-3.5 text-slate-400" />
-              <span className="font-medium font-mono">{currentTime || 'Memuat waktu...'}</span>
-            </div>
+            
 
             {/* Role Switcher Button Group */}
             <div className="bg-slate-100 p-1 rounded-xl flex items-center shadow-inner border border-slate-200">

@@ -35,3 +35,38 @@
 .animate-soft-pulse {
   animation: soft-pulse 2s infinite ease-in-out;
 }
+
+
+/* Theme Overrides via Alias */
+.theme-indigo {
+  --color-emerald-50: var(--color-indigo-50);
+  --color-emerald-100: var(--color-indigo-100);
+  --color-emerald-200: var(--color-indigo-200);
+  --color-emerald-500: var(--color-indigo-500);
+  --color-emerald-600: var(--color-indigo-600);
+  --color-emerald-700: var(--color-indigo-700);
+}
+.theme-blue {
+  --color-emerald-50: var(--color-blue-50);
+  --color-emerald-100: var(--color-blue-100);
+  --color-emerald-200: var(--color-blue-200);
+  --color-emerald-500: var(--color-blue-500);
+  --color-emerald-600: var(--color-blue-600);
+  --color-emerald-700: var(--color-blue-700);
+}
+.theme-rose {
+  --color-emerald-50: var(--color-rose-50);
+  --color-emerald-100: var(--color-rose-100);
+  --color-emerald-200: var(--color-rose-200);
+  --color-emerald-500: var(--color-rose-500);
+  --color-emerald-600: var(--color-rose-600);
+  --color-emerald-700: var(--color-rose-700);
+}
+.theme-amber {
+  --color-emerald-50: var(--color-amber-50);
+  --color-emerald-100: var(--color-amber-100);
+  --color-emerald-200: var(--color-amber-200);
+  --color-emerald-500: var(--color-amber-500);
+  --color-emerald-600: var(--color-amber-600);
+  --color-emerald-700: var(--color-amber-700);
+}
