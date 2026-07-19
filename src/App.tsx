@@ -180,51 +180,32 @@ export default function App() {
   // State Mutators: Settings & Accounts
   const handleSaveUser = async (u: UserAccount) => {
     try {
-      const res = await fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(u),
-      });
-      if (res.ok) {
-        await fetchState();
-      } else {
-        alert('Gagal mengelola akun.');
-      }
+      await api.saveUser(u);
+      await fetchState();
     } catch (e) {
       console.error(e);
+      alert('Gagal mengelola akun.');
     }
   };
 
   const handleDeleteUser = async (id: string) => {
     try {
-      const res = await fetch(`/api/users/${id}`, {
-        method: 'DELETE',
-      });
-      if (res.ok) {
-        await fetchState();
-      } else {
-        alert('Gagal menghapus akun.');
-      }
+      await api.deleteUser(id);
+      await fetchState();
     } catch (e) {
       console.error(e);
+      alert('Gagal menghapus akun.');
     }
   };
 
   const handleSaveSettings = async (s: AppSettings) => {
     try {
-      const res = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(s),
-      });
-      if (res.ok) {
-        await fetchState();
-        alert('Persentase potongan berhasil disimpan & disinkronkan ke seluruh server.');
-      } else {
-        alert('Gagal menyimpan pengaturan.');
-      }
+      await api.saveSettings(s);
+      await fetchState();
+      alert('Pengaturan berhasil disimpan & disinkronkan ke seluruh server.');
     } catch (e) {
       console.error(e);
+      alert('Gagal menyimpan pengaturan.');
     }
   };
 
@@ -234,17 +215,9 @@ export default function App() {
     t_data: Transaksi[];
   }) => {
     try {
-      const res = await fetch('/api/import-backup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(backup),
-      });
-      if (res.ok) {
-        await fetchState();
-        alert('Database online berhasil dipulihkan dari file backup!');
-      } else {
-        alert('Gagal mengimpor file backup ke server.');
-      }
+      await api.restoreBackup(backup);
+      await fetchState();
+      alert('Database online berhasil dipulihkan dari file backup!');
     } catch (e) {
       console.error(e);
       alert('Kesalahan jaringan saat memulihkan database.');

@@ -254,7 +254,7 @@ async function startServer() {
 
     if (id) {
       db.users = db.users.map((u: any) =>
-        u.id === id ? { ...u, username, password, role, namaLengkap } : u
+        u.id === id ? { ...u, username, role, namaLengkap, ...(password ? { password } : {}) } : u
       );
     } else {
       const newU = {

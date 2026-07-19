@@ -125,7 +125,7 @@ export default function AdminPanel({
         return;
       }
       onSaveUser({ 
-        id: crypto.randomUUID(),
+        id: '', 
         username: uUsername, 
         password: uPassword, 
         role: uRole, 
